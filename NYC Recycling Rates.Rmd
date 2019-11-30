@@ -1,0 +1,124 @@
+---
+title: "NYC Recycling Rates"
+author: "Evelyn Cates"
+date: "08/07/2019"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
+---
+## **Introduction**
+   When it comes to consumption and waste management we have a global problem that's reaching a breaking point. Some countries have even stopped importing trash because they are unable to process the high quantities. My interest in recycling and curiosity has led me to perform an analysis of the waste management industry in NYC and analyze another side of recycling not often discussed.
+  
+#### **Problem**:
+  Consumers are strongly encouraged to recycle and use sustainable products; however, how is our waste management system handling the items that can be recycled and additional waste now that we have new additional electronic waste? How come our waste management systems are not building additional recycling dumpsters?
+  
+   With the national recycling average of 34% as of 2015.[^1] I wanted apply data science and what I'm learning in school to understand where our recycling problem lies, is it from the consumer or the waste management side. This analysis will provide insights into the areas of waste management we need to devote our efforts too.
+  
+  Hypothesis: Our current waste management system is not designed to keep up with the increased consumption and is not recycling at a rate of sustainability.
+    
+### Importing and Cleaning the Data
+  In conducting research, I found NYC has free Open Source Data and a dataset I could use.There are two areas from the dataset I wanted to focus on to answer my hypothesis, the Diversion and Capture Rate, which are defined as follows.
+  
+  Diversion Rate: categorized as the percentage of total municipal solid waste collected by the Department of Sanitation that is disposed of by recycling.  
+  
+  Capture Rate: the percentage of total Paper or Metal/Glass/Plastic in the waste stream that is disposed of by recycling. Capture rate is the number of materials set out for residential recycling collection as a percentage of designated recyclable materials in both recycling and refuse streams. This ratio measures how much of the targeted materials are being recycled, which is a measure of how successfully such materials are recycled.
+
+Once I imported the data, I used na.omit to remove any empty cells. Since we are currently finishing up the Fiscal Year 2019 and the dataset is not updated with the Fiscal Year 2020 I did not remove any incomplete date ranges. I also modified the name of the column to find them easier. 
+
+```{r setup, include=FALSE}
+chooseCRANmirror(graphics=FALSE, ind=1)
+install.packages("ggplot2")
+install.packages("knitr")
+install.packages("dplyr")
+library("ggplot2")
+library("knitr") 
+library("dplyr")
+```
+  
+```{r recycling_df, fig.height=3, fig.width=4, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+recycling_df <- read.csv("Recycling_Diversion_and_Capture_Rates.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
+summary(recycling_df)
+
+###Removing empty cells
+recycling_df <- na.omit(recycling_df)
+sum(is.na(recycling_df))
+
+#Creating a new dataset without Fiscal Year 2020 dates
+recycling_df2 <- subset(recycling_df, Fiscal.Year != 2020)
+
+###Using glimpse to review the new dataset
+glimpse(recycling_df2)
+```
+### **Data Exploration**
+  After cleaning and organizing the dataset, I then moved on to understand the significance of the data and Diversion/ Capture rates. First, I plot a histogram of the Diversion Rate. By plotting the Diversion Rate I was able to visualize the overall data from 2016 - 2019. 
+  
+```{r recycling_df2,fig.width=4, fig.height=3, echo=FALSE}
+## Plotting the Diversion Rate into a Histogram chart and Boxplot in order to explore the Diversion Rate per month 
+
+#Plotting a histogram of the Diversion Rate 
+diversion_hist <- ggplot(recycling_df2, aes(recycling_df2$Diversion.Rate)) + geom_histogram(aes(y = ..density..), binwidth = 0.4, colour= "black", fill = "dark green") + geom_density(alpha = .4, fill = "#FF6666")
+
+diversion_hist
+
+capture_hist <- ggplot(recycling_df2, aes(recycling_df2$Capture.Rate)) + geom_histogram(aes(y = ..density..), binwidth = 0.4, colour= "darkgray", fill = "darkorange4") + geom_density(alpha = .4, fill = "#FF6666")
+
+capture_hist
+```
+
+The next method of exploration and learning about the numbers was a monthly overview. For this, I made a boxplot where I saw the avg, upper quartile, lower quartile and the outliers. The exploration phase is important because you start asking more questions and start looking deeper into data.
+
+```{r recycling_df3,fig.width=4, fig.height=3, echo=FALSE}
+diversion_rate_plot <- ggplot(recycling_df2, aes(x = Month.Name, y = Diversion.Rate)) + geom_boxplot() + labs(x = "Month", y = "Diversion Rate")
+
+diversion_rate_plot
+
+capture_rate_plot <- ggplot(recycling_df2, aes(x = Month.Name, y = Capture.Rate)) + geom_boxplot() + labs(x = "Month", y = "Capture Rate")
+
+capture_rate_plot
+
+diversion_rate_fy <- recycling_df2 %>%
+                         group_by(Fiscal.Year) %>%
+                         summarize(diversion_rate_fy=mean(Diversion.Rate))
+diversion_rate_fy
+ 
+capture_rate_fy <- recycling_df2 %>%
+                          group_by(Fiscal.Year) %>%
+                          summarize(capture_rate_fy=mean(Capture.Rate))
+capture_rate_fy
+
+```
+### Analysis Insights
+ From this dataset, I realized recycling goes beyond separating plastics, there are other factors to consider not often mentioned such as composting. During the exploratory data analysis, I made boxplots and histograms, to understand where the number lies. This lead to more questions that allowed me to dig deeper. 
+ 
+ Originally, I wanted to run a correlation analysis on the Zones and Capture Rates but a correlation test can only be completed with variables and the Zones are considered characters.I then used a regression analysis to look at the Diversion Rate per fiscal year.
+
+The Diversion Rate is increasing in NYC by 1% each year. This is hopeful news however, to know if this is a step in the right direction we need to know how much more waste is being reduced from landfills. 
+
+The Capture Rate consisted YOY at 38% which is 4% higher than the national average. With 254 million tons of waste generated as of 2015, there is room for improvement in our current systems.[^2]
+
+My hypothesis focused on our waste management system not improving recycling efforts to match our consumption. This analysis demonstrates that recycling rates are stagnant in NYC, therefore proving my hypothesis correct. The completion of this study gave me the understanding that the consumer and waste management industry are co-dependent and both need to improve if we are going to solve our global waste problem. As a whole, the diversion and capture rates are high if you are comparing NYC to the rest of the country. However, 34% is still not a sustainable amount. 
+
+With over 62% of total Paper or Metal/Glass/Plastic in the waste stream is not disposed of by recycling. These numbers indicated we have to improve the way consumers recycle and how our waste management system works.
+
+## **Conclusion**
+This analysis taught me how to pull data and gain meaningful insights along and how applicable it is to other areas. This report only scratches the surface on this complex issue and I would like to continue to expand on it. To conclude, the top three insights were:
+
+1. Capture Rate is stagnant and is only 4% higher than the national average. The data shows changes are not happening in our waste management system. Looking at the whole country, what are the factors that need to be considered in order to improve this problem?
+
+2. Recycling and waste management are co-dependent. In order to improve recycling, we most reduce our single use plastic and our waste management system has to change with our lifestyle now.
+
+3. We are taking the right approach at Disney because we are setting environmental goals for our company to reach and at the same time encouraging Cast and Guests to recycle and improve their carbon footprint. 
+
+  To tackle this complex industry we must be able to understand it and this dataset allows my first glimpse into how I can apply data and specifically R to learn how to start solving our global waste problem.
+
+
+Sources:
+
+[^1]: https://archive.epa.gov/epawaste/nonhaz/municipal/web/html/
+
+[^2]: https://www.recyclingtoday.com/article/2015-us-recycling-rate-epa/
